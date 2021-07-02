@@ -66,6 +66,15 @@ void TrafficLight::simulate()
     _cycling_lights = std::thread(&TrafficLight::cycleThroughPhases, this);
 }
 
+TrafficLightPhase SwitchLightPhase(TrafficLightPhase current_light_status){
+     std::this_thread::sleep_for(std::chrono::seconds(rand() % 6 + 4));
+    if(current_light_status == kRed)
+        return kGreen;
+    else
+        return kRed;
+
+}
+
 // virtual function which is executed in a thread
 void TrafficLight::cycleThroughPhases()
 {
@@ -75,13 +84,9 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
     while(1){
-        _currentPhase = kGreen;
-        _light_status_quque.send(std::move(_currentPhase));
-        std::this_thread::sleep_for(std::chrono::seconds(rand() % 6 + 4));
-        _currentPhase = kRed;
+        _currentPhase = SwitchLightPhase(_currentPhase);
         _light_status_quque.send(std::move(_currentPhase));
         std::this_thread::sleep_for(_cycle_wait_time);
-        std::this_thread::sleep_for(std::chrono::seconds(rand() % 6 + 4));
     }
 }
 
