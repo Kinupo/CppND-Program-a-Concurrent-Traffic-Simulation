@@ -67,12 +67,20 @@ void TrafficLight::simulate()
 }
 
 TrafficLightPhase SwitchLightPhase(TrafficLightPhase current_light_status){
-     std::this_thread::sleep_for(std::chrono::seconds(rand() % 6 + 4));
     if(current_light_status == kRed)
         return kGreen;
     else
         return kRed;
 
+}
+
+std::uniform_int_distribution<int> InitilizeRandomDevice(int lower_bound, int upper_bound){
+    return std::uniform_int_distribution<int>(lower_bound, upper_bound);
+}
+
+std::chrono::milliseconds CalculateTimeDiffernce(std::chrono::_V2::system_clock::time_point& refrence_time){
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now() - refrence_time);
 }
 
 // virtual function which is executed in a thread
@@ -83,10 +91,24 @@ void TrafficLight::cycleThroughPhases()
     // and toggles the current phase of the traffic light between red and green and sends an update method 
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
-    while(1){
-        _currentPhase = SwitchLightPhase(_currentPhase);
-        _light_status_quque.send(std::move(_currentPhase));
+    
+    auto wait_time = std::chrono::milliseconds(0);
+    auto time__light_switched = std::chrono::system_clock::now();
+
+    std::default_random_engine generator;
+    auto random_distributer = InitilizeRandomDevice(4000, 6000);
+
+    while(true){
+        
         std::this_thread::sleep_for(_cycle_wait_time);
+
+        if(wait_time < CalculateTimeDiffernce(time__light_switched)){
+            
+            _currentPhase = SwitchLightPhase(_currentPhase);
+            _light_status_quque.send(std::move(_currentPhase));
+
+            wait_time = std::chrono::milliseconds(random_distributer(generator));
+            time__light_switched = std::chrono::system_clock::now();
+        }
     }
 }
-
